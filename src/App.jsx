@@ -1,64 +1,96 @@
+import './App.css';
+import { useEffect, useState, useCallback } from 'react';
 
-import axios from "axios"
-import { useState } from 'react'
-import React from 'react'
+function App() {
+  const [search, setSearch] = useState("chennai");
+  const [city, setCity] = useState(null);
+  const [error, setError] = useState("");
 
-const Weather = () => {
-
-    const[city, setCity]= useState("")
-    const[temp, setTemp] = useState ("")
-    const[desc, SetDesc]= useState ("")
-    const[weather,SetWeather] = useState ("")
-    const[cname, setCname] = useState ("")
-
-    const handleCity = (e) =>
-    {
-        setCity(e.target.value)
-        
+  // Define getWeatherData with useCallback to avoid unnecessary re-creation of the function
+  const getWeatherData = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${search}&appid=9e2f483b43a855cabbdf6c768ba639dd&units=metric`
+      );
+      if (!response.ok) {
+        throw new Error("City not found");
+      }
+      const result = await response.json();
+      setCity(result);
+      setError(""); // Clear any previous errors
+    } catch (err) {
+      setCity(null);
+      setError(err.message);
     }
-    const getWeather = () =>
-    {
-        var weatherData= axios(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=9e2f483b43a855cabbdf6c768ba639dd`)
-        weatherData.then(function(sucess){
-            console.log(sucess);
-            
-            SetWeather(sucess.data.weather[0].main)
-            setTemp(sucess.data.main.temp)
-            SetDesc(sucess.data.weather[0].description)
-            setCname(sucess.data.name)         
-        })
-    }
+  }, [search]); // Dependency on search
+
+  useEffect(() => {
+    getWeatherData();
+  }, [getWeatherData]); // Add getWeatherData as a dependency
+
+  const handleCityChange = (e) => {
+    setSearch(e.target.value);
+  };
+
   return (
-    
-  <div className="min-h-screen bg-white flex flex-col items-center justify-center p-2">
-  <div className="bg-blue-400 bg-opacity-60 backdrop-blur-md p-6 rounded-xl shadow-2xl max-w-lg w-full text-center mt-10">
-    <h1 className="text-2xl font-bold mb-2 text-slate-700">Weather</h1>
-    <input
-      type="text"
-      placeholder="Enter city"
-      onChange={handleCity}
-      className="w-full p-2 rounded-lg shadow-md mb-5 text-blue-900 focus:outline-none focus:ring-2 focus:ring-purple-400"
-    />
-    <button
-      className="w-full bg-slate-600 text-white py-3 rounded-lg shadow-md transform transition hover:scale-105"
-      onClick={getWeather}
-    >
-      Get Weather
-    </button>
-  </div>
-
-<div className="mt-3 p-8 bg-black rounded-1xl shadow-2xl text-white ">
-         <h2 className="text-4xl font-bold mb-2 text-center">{cname}</h2>
-         <div className="text-1xl space-y-2">
-         <p className="font-medium">Temperature: {temp}°C</p>
-                 <p className="font-medium">Weather: {weather}</p>
-                 <p className="font-medium">Description: {desc}</p>
-         </div>      
+    <div className="App">
+      <div className="weather-card">
+        <div className="search">
+          <input
+            type="search"
+            placeholder="Enter city name"
+            spellCheck="false"
+            onChange={handleCityChange}
+          />
+<button
+   onClick={getWeatherData}
+   style={{
+     color: "white",
+     backgroundColor: "transparent", // Make button background transparent
+     border: "none",
+     padding: "10px 20px",
+     marginRight:"10px",
+     cursor: "pointer",
+     fontSize: "16px"
+  }}>Enter</button> </div>
+        {error && <p className="error">{error}</p>}
+        {city && (
+          <div className="weather">
+            <img
+              className="weather-icon"
+              src={`https://openweathermap.org/img/wn/${city.weather[0].icon}@2x.png`}
+              alt={city.weather[0].description}
+            />
+            <h1 className="temp">{city.main.temp.toFixed(1)}°C</h1>
+            <h2 className="city">{city.name}</h2>
+            <div className="details">
+              <div style={{ display: "flex" }} className="col">
+                <img
+                  className="humi"
+                  src="https://static-00.iconduck.com/assets.00/humidity-icon-2048x1675-xxsge5os.png"
+                  alt="Humidity icon"
+                />
+                <div className="info">
+                  <p className="humidity">{city.main.humidity}%</p>
+                  <p>Humidity</p>
+                </div>
+              </div>
+              <div className="col">
+                <img
+                  src="https://cdn-icons-png.flaticon.com/512/136/136712.png"
+                  alt="Wind speed icon"
+                />
+                <div className="info">
+                  <p className="wind">{(city.wind.speed * 3.6).toFixed(2)} km/h</p>
+                  <p>Wind Speed</p>
+                </div>
+              </div>
             </div>
-            </div>
-        
-        
-  )
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default Weather
+export default App;
